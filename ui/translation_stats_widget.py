@@ -17,7 +17,7 @@ class TranslationStatsWidget(QWidget):
     # 信号
     check_api_status = pyqtSignal()    # 通知主窗口检查API状态
     import_excel_requested = pyqtSignal()  # 请求导入Excel
-    export_excel_requested = pyqtSignal()  # 请求导出Excel
+    export_excel_requested = pyqtSignal()  
     
     def __init__(self, parent=None):
         super().__init__(parent)
