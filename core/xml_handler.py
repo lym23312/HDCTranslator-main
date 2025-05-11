@@ -118,20 +118,35 @@ class XMLHandler(QObject):
             self.translated_name = root.get('translatedname', '')
             self.no_whitespace = root.get('nowhitespace', 'false').lower() == 'true'
         
+        # 识别可能的特殊结构（如嵌套在Override标签内的条目）
+        elements_to_process = []
+        
+        # 查找所有需要处理的元素
+        for element in root:
+            # 跳过注释元素
+            if isinstance(element, etree._Comment):
+                continue
+                
+            # 检查是否是Override标签，这是一种特殊结构
+            if element.tag.lower() == 'override':
+                # 将Override内的所有子元素添加到处理列表
+                for child in element:
+                    if not isinstance(child, etree._Comment):
+                        elements_to_process.append(child)
+            else:
+                # 其他元素直接添加到处理列表
+                elements_to_process.append(element)
+        
         # 预先计算总元素数量，用于更精确的进度报告
-        total_elements = len(root)
+        total_elements = len(elements_to_process)
         batch_size = max(1, min(100, total_elements // 100))  # 动态批处理大小
         
         # 遍历所有子元素
-        for i, element in enumerate(root):
+        for i, element in enumerate(elements_to_process):
             # 更新进度（从60%到90%之间）
             if i % batch_size == 0:
                 progress = 60 + min(30, (i / max(1, total_elements)) * 30)
                 self.progress_updated.emit(int(progress), f"正在处理条目 {i+1}/{total_elements}...")
-            
-            # 跳过注释元素
-            if isinstance(element, etree._Comment):
-                continue
             
             tag = element.tag
             self.entry_types.add(tag)
