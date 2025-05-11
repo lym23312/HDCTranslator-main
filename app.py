@@ -44,6 +44,21 @@ def main():
         y = int((screen_geometry.height() - splash.height()) / 2)
         splash.move(x, y)
         
+        # 设置右键跳过变量
+        skip_intro = False
+        
+        # 定义右键跳过处理函数
+        def on_skip_requested():
+            nonlocal skip_intro
+            skip_intro = True
+            print("用户请求跳过启动画面")
+            # 确保事件循环退出
+            if 'loop' in locals():
+                loop.quit()
+        
+        # 连接右键跳过信号
+        splash.skip_requested.connect(on_skip_requested)
+        
         # 显示启动画面
         splash.show()
         app.processEvents()  # 强制处理事件,确保立即显示
@@ -94,16 +109,19 @@ def main():
             splash.showMessageWithCallback(msg, on_message_complete)
             app.processEvents()  # 确保消息立即开始显示
         
-        # 开始显示第一条消息
-        show_next_message(0)
-        
-        # 创建事件循环等待所有消息显示完成
-        loop = QEventLoop()
-        QTimer.singleShot(len(messages) * 800, loop.quit)  # 估计总时间
-        loop.exec()
-        
-        # 等待足够长的时间，让用户欣赏启动动画
-        time.sleep(1.5)
+        # 只有在不跳过介绍时才显示消息
+        if not skip_intro:
+            # 开始显示第一条消息
+            show_next_message(0)
+            
+            # 创建事件循环等待所有消息显示完成
+            loop = QEventLoop()
+            QTimer.singleShot(len(messages) * 800, loop.quit)  # 估计总时间
+            loop.exec()
+            
+            # 等待足够长的时间，让用户欣赏启动动画（如果没有被跳过）
+            if not skip_intro:
+                time.sleep(1.5)
         
         print("创建主窗口...")
         # 创建主窗口

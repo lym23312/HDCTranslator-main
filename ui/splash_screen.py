@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import (
     Qt, QTimer, QSize, QRect, QPropertyAnimation, 
-    QEasingCurve
+    QEasingCurve, pyqtSignal
 )
 from PyQt6.QtGui import (
     QFont, QColor, QPalette, QPixmap, QPainter, QBrush, QPen, 
@@ -25,6 +25,9 @@ from PyQt6.QtGui import (
 
 class StartupSplashScreen(QSplashScreen):
     """应用启动画面"""
+    
+    # 添加一个信号，用于通知右键跳过
+    skip_requested = pyqtSignal()
     
     def __init__(self):
         """初始化启动画面"""
@@ -130,12 +133,32 @@ UDS翻译终端
         self.typing_complete_callback = callback
         self.showMessage(message, alignment, color)
     
+    def mousePressEvent(self, event):
+        """鼠标点击事件处理"""
+        # 检测右键点击
+        if event.button() == Qt.MouseButton.RightButton:
+            # 发出跳过信号
+            self.skip_requested.emit()
+        else:
+            # 其他鼠标事件交给父类处理
+            super().mousePressEvent(event)
+    
     def drawContents(self, painter):
         """绘制启动画面内容（重写QSplashScreen的方法）"""
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
         
         painter.fillRect(self.rect(), QColor(0, 0, 0))
+        
+        # 添加右键跳过提示
+        font = QFont("Courier New", 8)
+        painter.setFont(font)
+        painter.setPen(QColor(200, 200, 200, 180))
+        painter.drawText(
+            QRect(self.width() - 200, self.height() - 30, 190, 20),
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom,
+            "按右键可跳过启动动画"
+        )
         
         line_height = self.height() / self.max_terminal_lines
         visible_height = int(self.terminal_line * line_height)

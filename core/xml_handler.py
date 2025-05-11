@@ -375,10 +375,13 @@ class XMLHandler(QObject):
             # 检查是否为潜渊症XML格式
             is_barotrauma = root.tag.lower() == 'infotexts'
             
-            # 保存根节点属性
+            # 保存根节点属性但强制设置为简体中文
             root_attribs = dict(root.attrib)
+            if is_barotrauma:
+                root_attribs['language'] = 'Simplified Chinese'
+                root_attribs['translatedname'] = '中文（简体）'
             
-            # 创建新的根节点，保留原始属性
+            # 创建新的根节点，使用修改后的属性
             new_root = etree.Element(root.tag, attrib=root_attribs)
             
             # 提取注释

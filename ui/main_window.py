@@ -659,6 +659,10 @@ class MainWindow(QMainWindow):
         # 当单元格内容改变时更新进度图表
         table.itemChanged.connect(self.update_translation_stats)
         
+        # 启用右键菜单
+        table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        table.customContextMenuRequested.connect(self.show_translation_table_context_menu)
+        
         return table
 
     def create_progress_chart(self):
@@ -1430,6 +1434,53 @@ class MainWindow(QMainWindow):
                 
                 # 更新XML处理器中的翻译
                 self.xml_handler.update_translation(entry_id, translation)
+    
+    def show_translation_table_context_menu(self, position):
+        """显示翻译表格的右键菜单"""
+        # 获取鼠标点击位置的行和列
+        row = self.translation_table.rowAt(position.y())
+        column = self.translation_table.columnAt(position.x())
+        
+        # 如果点击位置不存在行或列，则不显示菜单
+        if row < 0 or column < 0:
+            return
+        
+        # 创建右键菜单
+        menu = QMenu(self)
+        
+        # 如果点击的是原文列，添加"复制到译文"选项
+        if column == 1:  # 原文列
+            copy_to_translation_action = menu.addAction("复制到译文")
+            copy_to_translation_action.triggered.connect(lambda: self.copy_original_to_translation(row))
+        
+        # 如果菜单不为空，在鼠标位置显示
+        if not menu.isEmpty():
+            menu.exec(self.translation_table.viewport().mapToGlobal(position))
+    
+    def copy_original_to_translation(self, row):
+        """将原文复制到译文"""
+        if row < 0 or row >= self.translation_table.rowCount():
+            return
+        
+        # 获取原文
+        original_item = self.translation_table.item(row, 1)
+        if original_item and original_item.text():
+            original_text = original_item.text()
+            
+            # 创建译文单元格项
+            translation_item = QTableWidgetItem(original_text)
+            
+            # 设置译文单元格项
+            self.translation_table.setItem(row, 2, translation_item)
+            
+            # 更新XML处理器中的翻译
+            id_item = self.translation_table.item(row, 0)
+            if id_item:
+                entry_id = id_item.text()
+                self.xml_handler.update_translation(entry_id, original_text)
+            
+            # 更新统计信息
+            self.add_log_entry(f"已将第 {row+1} 行原文复制到译文")
     
     def mark_all_as_translated(self):
         """将所有未翻译条目标记为已翻译（不实际翻译，只更改状态）"""
